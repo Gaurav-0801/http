@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  name          String
+  photo         String?
+  rooms         Room[]
+  chats         Chat[]
+  elements      Element[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("users")
+}
+
+model Room {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  adminId     String
+  admin       User      @relation(fields: [adminId], references: [id])
+  chats       Chat[]
+  elements    Element[]
+  
+  @@map("rooms")
+}
+
+model Chat {
+  id        Int       @id  @default(autoincrement())
+  roomId    Int
+  message   String
+  userId    String
+  createdAt DateTime  @default(now())
+  room      Room      @relation(fields: [roomId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  
+  @@map("chats")
+}
+
+model Element {
+  id           String   @id @default(uuid())
+  roomId       Int
+  userId       String
+  type         String
+  x            Float
+  y            Float
+  width        Float?
+  height       Float?
+  points       Json?
+  strokeColor  String
+  strokeWidth  Int
+  fillColor    String
+  strokeStyle  String?
+  text         String?
+  timestamp    BigInt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  room         Room     @relation(fields: [roomId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+  
+  @@map("elements")
+}
