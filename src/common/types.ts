@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const CreateUserSchema = z.object({
-  username: z.string().email(),
+  email: z.string().email(),   // match Prisma
   password: z.string().min(6),
   name: z.string().min(1),
 })
