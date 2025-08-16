@@ -41,54 +41,50 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-
 app.post("/signin", async (req, res) => {
-  // 🔍 Log raw body (except password)
-  console.log("SIGNIN RAW BODY:", { ...req.body, password: "***" });
-
-  const parsedData = SigninSchema.safeParse(req.body);
+  const parsedData = SigninSchema.safeParse(req.body)
 
   if (!parsedData.success) {
-    // 🔍 Log Zod validation errors
-    console.error("SIGNIN VALIDATION ERROR:", parsedData.error.format());
-    res.status(400).json({ message: "Incorrect inputs" });
-    return;
+    console.log("❌ Invalid inputs:", req.body)
+    res.status(400).json({ message: "Incorrect inputs" })
+    return
   }
-
-  console.log("SIGNIN PARSED DATA:", { email: parsedData.data.email });
 
   const user = await prismaClient.user.findFirst({
     where: { email: parsedData.data.email },
-  });
+  })
 
   if (!user) {
-    console.warn("SIGNIN FAILED: user not found for email", parsedData.data.email);
-    res.status(403).json({ message: "Not authorized" });
-    return;
+    console.log("❌ User not found:", parsedData.data.email)
+    res.status(403).json({ message: "Not authorized" })
+    return
   }
 
-  const isValidPassword = await bcrypt.compare(parsedData.data.password, user.password);
-  if (!isValidPassword) {
-    console.warn("SIGNIN FAILED: invalid password for email", parsedData.data.email);
-    res.status(403).json({ message: "Not authorized" });
-    return;
-  }
+  const isPasswordValid = await bcrypt.compare(
+    parsedData.data.password,
+    user.password
+  )
 
-  console.log("SIGNIN SUCCESS:", { userId: user.id, email: user.email });
+  if (!isPasswordValid) {
+    console.log("❌ Invalid password for:", parsedData.data.email)
+    res.status(403).json({ message: "Not authorized" })
+    return
+  }
 
   const tokens = JWTService.generateTokenPair({
     userId: user.id,
     email: user.email,
     name: user.name,
-  });
+  })
 
-  res.json(tokens);
-});
+  console.log("✅ Signin success:", { userId: user.id, email: user.email })
+
   res.json({
     ...tokens,
     user: { id: user.id, name: user.name, email: user.email },
   })
 })
+
 
 app.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body
