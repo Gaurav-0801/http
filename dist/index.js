@@ -17,22 +17,25 @@ app.post("/signup", async (req, res) => {
     const parsedData = types_1.CreateUserSchema.safeParse(req.body);
     if (!parsedData.success) {
         console.error(parsedData.error.format());
-        res.status(400).json({ message: "Incorrect inputs" });
-        return;
+        return res.status(400).json({ message: "Incorrect inputs" });
     }
     try {
         const hashedPassword = await bcryptjs_1.default.hash(parsedData.data.password, 10);
         const user = await client_1.prismaClient.user.create({
             data: {
-                email: parsedData.data.username,
+                email: parsedData.data.email,
                 password: hashedPassword,
                 name: parsedData.data.name,
             },
         });
-        res.json({ userId: user.id });
+        return res.json({ userId: user.id });
     }
-    catch {
-        res.status(409).json({ message: "User already exists with this username" });
+    catch (error) {
+        console.error("Signup error:", error);
+        if (error.code === "P2002") {
+            return res.status(409).json({ message: "User already exists with this email" });
+        }
+        return res.status(500).json({ message: "Internal server error" });
     }
 });
 app.post("/signin", async (req, res) => {
