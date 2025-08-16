@@ -43,28 +43,47 @@ app.post("/signup", async (req, res) => {
 
 
 app.post("/signin", async (req, res) => {
-  const parsedData = SigninSchema.safeParse(req.body)
+  // 🔍 Log raw body (except password)
+  console.log("SIGNIN RAW BODY:", { ...req.body, password: "***" });
+
+  const parsedData = SigninSchema.safeParse(req.body);
 
   if (!parsedData.success) {
-    res.status(400).json({ message: "Incorrect inputs" })
-    return
+    // 🔍 Log Zod validation errors
+    console.error("SIGNIN VALIDATION ERROR:", parsedData.error.format());
+    res.status(400).json({ message: "Incorrect inputs" });
+    return;
   }
+
+  console.log("SIGNIN PARSED DATA:", { email: parsedData.data.email });
 
   const user = await prismaClient.user.findFirst({
-    where: { email: parsedData.data.email! },
-  })
+    where: { email: parsedData.data.email },
+  });
 
-  if (!user || !(await bcrypt.compare(parsedData.data.password!, user.password))) {
-    res.status(403).json({ message: "Not authorized" })
-    return
+  if (!user) {
+    console.warn("SIGNIN FAILED: user not found for email", parsedData.data.email);
+    res.status(403).json({ message: "Not authorized" });
+    return;
   }
+
+  const isValidPassword = await bcrypt.compare(parsedData.data.password, user.password);
+  if (!isValidPassword) {
+    console.warn("SIGNIN FAILED: invalid password for email", parsedData.data.email);
+    res.status(403).json({ message: "Not authorized" });
+    return;
+  }
+
+  console.log("SIGNIN SUCCESS:", { userId: user.id, email: user.email });
 
   const tokens = JWTService.generateTokenPair({
     userId: user.id,
     email: user.email,
     name: user.name,
-  })
+  });
 
+  res.json(tokens);
+});
   res.json({
     ...tokens,
     user: { id: user.id, name: user.name, email: user.email },
