@@ -51,11 +51,11 @@ app.post("/signin", async (req, res) => {
   }
 
   const user = await prismaClient.user.findFirst({
-    where: { email: parsedData.data.email },
+    where: { email: parsedData.data.username },
   })
 
   if (!user) {
-    console.log("❌ User not found:", parsedData.data.email)
+    console.log("❌ User not found:", parsedData.data.username)
     res.status(403).json({ message: "Not authorized" })
     return
   }
@@ -66,7 +66,7 @@ app.post("/signin", async (req, res) => {
   )
 
   if (!isPasswordValid) {
-    console.log("❌ Invalid password for:", parsedData.data.email)
+    console.log("❌ Invalid password for:", parsedData.data.username)
     res.status(403).json({ message: "Not authorized" })
     return
   }

@@ -7,7 +7,7 @@ export const CreateUserSchema = z.object({
 })
 
 export const SigninSchema = z.object({
-  email: z.string().email(),
+  username: z.string().email(),
   password: z.string().min(1),
 })
 
