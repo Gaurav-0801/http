@@ -51,7 +51,7 @@ app.post("/signin", async (req, res) => {
   }
 
   const user = await prismaClient.user.findFirst({
-    where: { email: parsedData.data.username! },
+    where: { email: parsedData.data.email! },
   })
 
   if (!user || !(await bcrypt.compare(parsedData.data.password!, user.password))) {
