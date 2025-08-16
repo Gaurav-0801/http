@@ -30,8 +30,17 @@ app.post("/signup", async (req, res) => {
     })
 
     res.json({ userId: user.id })
-  } catch {
-    res.status(409).json({ message: "User already exists with this username" })
+  } catch (error: any) {
+    console.error("Signup error:", error)
+
+    // Check if it's a Prisma unique constraint violation
+    if (error.code === "P2002") {
+      res.status(409).json({ message: "User already exists with this email" })
+      return
+    }
+
+    // Handle other database errors
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 
