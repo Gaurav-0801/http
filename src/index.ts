@@ -11,26 +11,15 @@ app.use(express.json())
 app.use(cors())
 
 app.post("/signup", async (req, res) => {
-  console.log("=== Signup Request Body ===");
-  console.log(req.body);
-
   const parsedData = CreateUserSchema.safeParse(req.body);
 
   if (!parsedData.success) {
-    console.error("=== Zod Validation Failed ===");
-    console.error((parsedData as any).error.format());
-    return res.status(400).json({
-      message: "Incorrect inputs",
-      errors: (parsedData as any).error.flatten(), // send full validation errors to client
-    });
+    console.error(parsedData.error.format());
+    return res.status(400).json({ message: "Incorrect inputs" }); // return added
   }
-
-  console.log("=== Zod Validation Passed ===");
-  console.log(parsedData.data);
 
   try {
     const hashedPassword = await bcrypt.hash(parsedData.data.password!, 10);
-    console.log("=== Password Hashed ===");
 
     const user = await prismaClient.user.create({
       data: {
@@ -40,23 +29,15 @@ app.post("/signup", async (req, res) => {
       },
     });
 
-    console.log("=== User Created Successfully ===");
-    console.log(user);
-
-    res.json({ userId: user.id });
+    return res.json({ userId: user.id }); // return added
   } catch (error: any) {
-    console.error("=== Signup Prisma Error ===");
-    console.error(error);
+    console.error("Signup error:", error);
 
     if (error.code === "P2002") {
-      console.warn("=== Unique Constraint Violation ===");
-      return res.status(409).json({ message: "User already exists with this email" });
+      return res.status(409).json({ message: "User already exists with this email" }); // return added
     }
 
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message, // send Prisma error message to client for debugging
-    });
+    return res.status(500).json({ message: "Internal server error" }); // return added
   }
 });
 
